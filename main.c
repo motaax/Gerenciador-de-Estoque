@@ -179,8 +179,8 @@ int main(){
     for(;;){
         int op;
 
-        printf("\n1-Vender\n 2-Repor\n 3-Listar\n 4-Valor Total\n");
-        printf("5-Cadastrar Produto\n 6-Remover Produto\n 7-Salvar\n 0-Sair\n");
+        printf("\n1-Vender\n2-Repor\n3-Listar\n4-Valor Total\n");
+        printf("5-Cadastrar Produto\n6-Remover Produto\n7-Salvar\n0-Sair\n");
         scanf("%d",&op);
 
         if(op==0) break;
