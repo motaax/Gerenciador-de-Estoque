@@ -1,0 +1,12 @@
+ Codigo: 1
+ Nome: batata
+ Preco: 4.00
+ Quantidade: 2
+ Vendidos: 0
+
+ Codigo: 0
+ Nome: arroz
+ Preco: 7.00
+ Quantidade: 3
+ Vendidos: 0
+
