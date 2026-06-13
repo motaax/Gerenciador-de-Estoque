@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#define MAX_PRODUTOS 100
+#define MAX_PRODUTOS 300
 #define MAX_VENDAS 1000
 
 typedef struct {
