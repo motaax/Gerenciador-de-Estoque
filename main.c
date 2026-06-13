@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#define MAX_PRODUTOS 100
+#define MAX_VENDAS 1000
+
 typedef struct {
     int codigo;
     char nome[16];
@@ -8,342 +11,186 @@ typedef struct {
     int vendidos;
 } Produto;
 
-int main() {
+typedef struct {
+    int codigo;
+    int quantidade;
+    float valor;
+} Venda;
 
-    int n, i, j;
+int buscarCodigo(Produto e[], int n, int codigo){
+    int i;
+    
+    for(i=0;i<n;i++)
+        if(e[i].codigo == codigo) return i;
+    return -1;
+}
 
-    printf("Quantos produtos deseja cadastrar? ");
-    scanf("%d", &n);
+void listarEstoque(Produto e[], int n){
+    int i;
 
-    Produto estoque[n];
+    for(i=0;i<n;i++){
+        printf("\nCodigo: %d\n", e[i].codigo);
+        printf("Nome: %s\n", e[i].nome);
+        printf("Preco: %.2f\n", e[i].preco);
+        printf("Quantidade: %d\n", e[i].quantidade);
+        printf("Vendidos: %d\n", e[i].vendidos);
+    }
+}
 
-    // Cadastro dos produtos
-    for(i = 0; i < n; i++) {
+void valorTotal(Produto e[], int n){
+    float total=0;
 
-        printf("\n=== Produto %d ===\n", i + 1);
+    int i;
+    for(i=0;i<n;i++) total += e[i].preco * e[i].quantidade;
+    printf("Valor total do estoque: R$ %.2f\n", total);
+}
 
-        for(;;) {
+void vender(Produto e[], int n, Venda h[], int *qv){
+    int codigo,qtd,pos;
 
-            int repetido = 0;
+    printf("Codigo: ");
+    scanf("%d",&codigo);
 
-            printf("Codigo: ");
-            scanf("%d", &estoque[i].codigo);
+    pos = buscarCodigo(e,n,codigo);
+    if(pos==-1){
+        printf("Produto nao encontrado.\n");
+        return;
+    }
 
-            for(j = 0; j < i; j++) {
-                if(estoque[i].codigo == estoque[j].codigo) {
-                    repetido = 1;
-                    break;
-                }
-            }
+    printf("Quantidade: ");
+    scanf("%d",&qtd);
 
-            if(repetido == 0) {
-                break;
-            }
+    if(e[pos].quantidade < qtd){
+        printf("Estoque insuficiente.\n");
+        return;
+    }
 
-            printf("Erro: codigo ja cadastrado!\n");
-        }
+    e[pos].quantidade -= qtd;
+    e[pos].vendidos += qtd;
+
+    h[*qv].codigo = codigo;
+    h[*qv].quantidade = qtd;
+    h[*qv].valor = qtd * e[pos].preco;
+    (*qv)++;
+
+    printf("Venda realizada.\n");
+}
+
+void repor(Produto e[], int n){
+    int codigo,qtd,pos;
+
+    printf("Codigo: ");
+    scanf("%d",&codigo);
+
+    pos = buscarCodigo(e,n,codigo);
+    if(pos==-1){
+        printf("Produto nao encontrado.\n");
+        return;
+    }
+
+    printf("Quantidade a repor: ");
+    scanf("%d",&qtd);
+
+    e[pos].quantidade += qtd;
+}
+
+void cadastrarNovo(Produto e[], int *n){
+    if(*n >= MAX_PRODUTOS){
+        printf("Limite atingido.\n");
+        return;
+    }
+
+    printf("Codigo: ");
+    scanf("%d",&e[*n].codigo);
+
+    printf("Nome: ");
+    scanf(" %15[^\n]", e[*n].nome);
+
+    printf("Preco: ");
+    scanf("%f",&e[*n].preco);
+
+    printf("Quantidade: ");
+    scanf("%d",&e[*n].quantidade);
+
+    e[*n].vendidos = 0;
+    (*n)++;
+}
+
+void removerProduto(Produto e[], int *n){
+    int codigo,pos,i;
+
+    printf("Codigo: ");
+    scanf("%d",&codigo);
+
+    pos = buscarCodigo(e,*n,codigo);
+
+    if(pos==-1){
+        printf("Nao encontrado.\n");
+        return;
+    }
+
+    for(i=pos;i<*n-1;i++)
+        e[i]=e[i+1];
+
+    (*n)--;
+}
+
+void salvar(Produto e[], int n){
+    FILE *f = fopen("estoque.txt","w");
+    int i;
+
+    if(f==NULL) return;
+
+    for(i=0;i<n;i++)
+        fprintf(f," Codigo: %d\n Nome: %s\n Preco: %.2f\n Quantidade: %d\n Vendidos: %d\n\n", e[i].codigo,e[i].nome,e[i].preco, e[i].quantidade,e[i].vendidos);
+
+    fclose(f);
+    printf("Arquivo salvo.\n");
+}
+
+int main(){
+
+    Produto estoque[MAX_PRODUTOS];
+    Venda historico[MAX_VENDAS];
+
+    int n,i,qtdVendas=0;
+
+    printf("Quantidade inicial de produtos: ");
+    scanf("%d",&n);
+
+    for(i=0;i<n;i++){
+        printf("\nProduto %d\n",i+1);
+
+        printf("Codigo: ");
+        scanf("%d",&estoque[i].codigo);
 
         printf("Nome: ");
         scanf(" %15[^\n]", estoque[i].nome);
 
         printf("Preco: ");
-        scanf("%f", &estoque[i].preco);
+        scanf("%f",&estoque[i].preco);
 
         printf("Quantidade: ");
-        scanf("%d", &estoque[i].quantidade);
+        scanf("%d",&estoque[i].quantidade);
 
         estoque[i].vendidos = 0;
     }
 
-    int opcao;
-
-    for(;;) {
-
-        printf("\n========== MENU ==========\n");
-        printf("1 - Vender produto\n");
-        printf("2 - Repor estoque\n");
-        printf("3 - Listar estoque\n");
-        printf("4 - Buscar por codigo\n");
-        printf("5 - Buscar por nome\n");
-        printf("6 - Valor total do estoque\n");
-        printf("7 - Produto mais caro e mais barato\n");
-        printf("8 - Relatorio de vendas\n");
-        printf("0 - Sair\n");
-
-        printf("Opcao: ");
-        scanf("%d", &opcao);
-
-        if(opcao == 0) {
-
-            printf("Encerrando programa...\n");
-            break;
-        }
-
-        else if(opcao == 1) { // Venda
-
-            int codigo, qtd;
-            int encontrado = 0;
-
-            printf("Codigo do produto: ");
-            scanf("%d", &codigo);
-
-            printf("Quantidade desejada: ");
-            scanf("%d", &qtd);
-
-            for(i = 0; i < n; i++) {
-
-                if(estoque[i].codigo == codigo) {
-
-                    encontrado = 1;
-
-                    if(estoque[i].quantidade >= qtd) {
-
-                        float valorCompra;
-
-                        estoque[i].quantidade -= qtd;
-                        estoque[i].vendidos += qtd;
-
-                        valorCompra =
-                            estoque[i].preco * qtd;
-
-                        printf("\nPedido atendido!\n");
-                        printf("Valor da compra: R$ %.2f\n",
-                               valorCompra);
-
-                        printf("Estoque restante: %d\n",
-                               estoque[i].quantidade);
-                    }
-                    else {
-                        printf("Erro: estoque insuficiente!\n");
-                    }
-
-                    break;
-                }
-            }
-
-            if(encontrado == 0) {
-                printf("Codigo nao encontrado!\n");
-            }
-        }
-
-        else if(opcao == 2) { // Reposição
-
-            int codigo, qtd;
-            int encontrado = 0;
-
-            printf("Codigo do produto: ");
-            scanf("%d", &codigo);
-
-            printf("Quantidade para repor: ");
-            scanf("%d", &qtd);
-
-            for(i = 0; i < n; i++) {
-
-                if(estoque[i].codigo == codigo) {
-
-                    estoque[i].quantidade += qtd;
-
-                    printf("Reposicao realizada!\n");
-                    printf("Novo estoque: %d\n",
-                           estoque[i].quantidade);
-
-                    encontrado = 1;
-                    break;
-                }
-            }
-
-            if(encontrado == 0) {
-                printf("Codigo nao encontrado!\n");
-            }
-        }
-
-        else if(opcao == 3) { // Listar estoque
-
-            printf("\n===== ESTOQUE =====\n");
-
-            for(i = 0; i < n; i++) {
-
-                printf("\nCodigo: %d\n",
-                       estoque[i].codigo);
-
-                printf("Nome: %s\n",
-                       estoque[i].nome);
-
-                printf("Preco: R$ %.2f\n",
-                       estoque[i].preco);
-
-                printf("Quantidade: %d\n",
-                       estoque[i].quantidade);
-
-                if(estoque[i].quantidade < 10) {
-                    printf("ATENCAO: Estoque baixo!\n");
-                }
-            }
-        }
-
-        else if(opcao == 4) { // Buscar por código
-
-            int codigo;
-            int encontrado = 0;
-
-            printf("Codigo: ");
-            scanf("%d", &codigo);
-
-            for(i = 0; i < n; i++) {
-
-                if(estoque[i].codigo == codigo) {
-
-                    printf("\nProduto encontrado:\n");
-                    printf("Codigo: %d\n",
-                           estoque[i].codigo);
-
-                    printf("Nome: %s\n",
-                           estoque[i].nome);
-
-                    printf("Preco: %.2f\n",
-                           estoque[i].preco);
-
-                    printf("Quantidade: %d\n",
-                           estoque[i].quantidade);
-
-                    encontrado = 1;
-                    break;
-                }
-            }
-
-            if(encontrado == 0) {
-                printf("Produto nao encontrado!\n");
-            }
-        }
-
-        else if(opcao == 5) { // Buscar por nome
-
-            char busca[16];
-            int encontrado = 0;
-
-            printf("Nome do produto: ");
-            scanf(" %15[^\n]", busca);
-
-            for(i = 0; i < n; i++) {
-
-                int igual = 1;
-
-                for(j = 0; j < 16; j++) {
-
-                    if(busca[j] != estoque[i].nome[j]) {
-                        igual = 0;
-                        break;
-                    }
-
-                    if(busca[j] == '\0') {
-                        break;
-                    }
-                }
-
-                if(igual) {
-
-                    printf("\nProduto encontrado:\n");
-                    printf("Codigo: %d\n",
-                           estoque[i].codigo);
-
-                    printf("Nome: %s\n",
-                           estoque[i].nome);
-
-                    printf("Preco: %.2f\n",
-                           estoque[i].preco);
-
-                    printf("Quantidade: %d\n",
-                           estoque[i].quantidade);
-
-                    encontrado = 1;
-                }
-            }
-
-            if(encontrado == 0) {
-                printf("Produto nao encontrado!\n");
-            }
-        }
-
-        else if(opcao == 6) { // Valor total do estoque
-
-            float valorTotal = 0;
-
-            for(i = 0; i < n; i++) {
-
-                valorTotal +=
-                    estoque[i].preco *
-                    estoque[i].quantidade;
-            }
-
-            printf("Valor total do estoque: R$ %.2f\n",
-                   valorTotal);
-        }
-
-        else if(opcao == 7) { // Mais caro e mais barato
-
-            int maisCaro = 0;
-            int maisBarato = 0;
-
-            for(i = 1; i < n; i++) {
-
-                if(estoque[i].preco >
-                   estoque[maisCaro].preco) {
-
-                    maisCaro = i;
-                }
-
-                if(estoque[i].preco <
-                   estoque[maisBarato].preco) {
-
-                    maisBarato = i;
-                }
-            }
-
-            printf("\nProduto mais caro:\n");
-            printf("Nome: %s\n",
-                   estoque[maisCaro].nome);
-            printf("Preco: %.2f\n",
-                   estoque[maisCaro].preco);
-
-            printf("\nProduto mais barato:\n");
-            printf("Nome: %s\n",
-                   estoque[maisBarato].nome);
-            printf("Preco: %.2f\n",
-                   estoque[maisBarato].preco);
-        }
-
-        else if(opcao == 8) { // Relatório de vendas
-
-            float faturamento = 0;
-
-            printf("\n===== RELATORIO DE VENDAS =====\n");
-
-            for(i = 0; i < n; i++) {
-
-                float valorProduto =
-                    estoque[i].vendidos *
-                    estoque[i].preco;
-
-                faturamento += valorProduto;
-
-                printf("\nProduto: %s\n",
-                       estoque[i].nome);
-
-                printf("Quantidade vendida: %d\n",
-                       estoque[i].vendidos);
-
-                printf("Valor arrecadado: R$ %.2f\n",
-                       valorProduto);
-            }
-
-            printf("\nFaturamento total: R$ %.2f\n",
-                   faturamento);
-        }
-
-        else {
-
-            printf("Opcao invalida!\n");
-        }
+    for(;;){
+        int op;
+
+        printf("\n1-Vender\n 2-Repor\n 3-Listar\n 4-Valor Total\n");
+        printf("5-Cadastrar Produto\n 6-Remover Produto\n 7-Salvar\n 0-Sair\n");
+        scanf("%d",&op);
+
+        if(op==0) break;
+        else if(op==1) vender(estoque,n,historico,&qtdVendas);
+        else if(op==2) repor(estoque,n);
+        else if(op==3) listarEstoque(estoque,n);
+        else if(op==4) valorTotal(estoque,n);
+        else if(op==5) cadastrarNovo(estoque,&n);
+        else if(op==6) removerProduto(estoque,&n);
+        else if(op==7) salvar(estoque,n);
     }
 
     return 0;
